@@ -1,7 +1,6 @@
 use petgraph::Graph;
-use std::fs::{self, File};
-use std::io;
-use std::io::{BufRead, BufReader};
+use std::collections::VecDeque;
+use std::fs::{self};
 use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
@@ -20,83 +19,131 @@ struct TsImport {
 struct TsFile {
     imports: Vec<TsImport>,
     file_name: String,
+    relative_path: String,
 }
 
 fn main() {
-    let mut graph = Graph::new();
+    let mut graph: Graph<TsFile, String> = Graph::new();
 
-    let n1 = graph.add_node(10);
-    let n2 = graph.add_node(5);
+    // let n1 = graph.add_node(10);
+    // let n2 = graph.add_node(5);
 
-    let _l2 = graph.add_edge(n1, n2, 4);
+    // let _l2 = graph.add_edge(n1, n2, 4);
 
-    let dir = Path::new("./proxysite-cloud-functions/functions/src");
+    let dir = Path::new("./assets/proxysite-cloud-functions/functions/src");
 
-    visit_dirs(dir);
-
-    // let res = tokenize_import("import { myFunc, myVar } from './myfile';");
-
-    // println!("{:#?}", res);
+    if let Some(files) = visit_dirs(dir) {
+        println!("{:#?}", files);
+    } else {
+        eprintln!("ERROR visiting directories");
+    }
 }
 
 // one possible implementation of walking a directory only visiting files
-fn visit_dirs(dir: &Path) -> io::Result<()> {
-    if dir.is_dir() {
-        for entry in fs::read_dir(dir)? {
-            let entry = entry?;
+fn visit_dirs(dir: &Path) -> Option<Vec<TsFile>> {
+    let mut dir_queue = VecDeque::new();
+    dir_queue.push_back(dir.to_path_buf());
+    let mut ts_files: Vec<TsFile> = Vec::new();
+
+    while let Some(dir) = dir_queue.pop_front() {
+        for entry in fs::read_dir(dir).unwrap() {
+            let entry = entry.unwrap();
+            let file_type = entry.file_type().unwrap();
             let path = entry.path();
-            if path.is_dir() {
-                visit_dirs(&path)?;
-            } else {
+
+            if file_type.is_file() {
+                // Do something with the file, e.g. print its path
+                println!("{}", path.display());
                 if let Some(ts_file) = find_imported_files(&entry.path()) {
-                    // use origin
-                    // println!("{:#?}", ts_file);
+                    ts_files.push(ts_file);
                 } else {
                     println!(
                         "ERROR reading filepath: {}",
                         path.as_os_str().to_str().unwrap()
                     );
                 }
+            } else if file_type.is_dir() {
+                dir_queue.push_back(path);
             }
         }
     }
-    Ok(())
+
+    Some(ts_files)
 }
 
 fn find_imported_files(f_path: &PathBuf) -> Option<TsFile> {
-    let file = File::open(f_path).unwrap();
-
-    // imports: Vec<TsImport>,
-    // file_name: String,
-    // exports: Vec<String>,
-
     let mut imports: Vec<TsImport> = Vec::new();
 
     let file_name = f_path.file_name()?.to_str()?;
+    let data = fs::read_to_string(f_path).expect("Unable to read file");
+    let import_lines = get_import_lines(&data);
 
-    let reader = BufReader::new(file);
-
-    for line in reader.lines() {
-        let file_line = line.unwrap();
-        if file_line.starts_with("import") {
-            if let Some(imp) = parse_import(file_line.to_owned()) {
-                // use origin
-                imports.push(imp);
-            } else {
-                println!(
-                    "ERROR reading line: {}",
-                    f_path.to_owned().as_os_str().to_str().unwrap()
-                );
-            }
+    for line in import_lines {
+        if let Some(imp) = parse_import(line.to_owned()) {
+            // use origin
+            imports.push(imp);
+        } else {
+            println!(
+                "ERROR reading line: {}",
+                f_path.to_owned().as_os_str().to_str().unwrap()
+            );
         }
     }
 
     Some(TsFile {
         file_name: file_name.to_string(),
         imports,
+        relative_path: String::from(f_path.to_str().unwrap()),
     })
 
     // let mut imports = Vec::new();
+}
+
+fn get_import_lines(data: &str) -> Vec<String> {
+    let mut imports = Vec::new();
+    let mut inside_import = false;
+    let mut import_start_index = 0;
+    let mut braces_count = 0;
+    // clean special chars like: ×
+    let data_cleaned = data
+        .replace(|c: char| !c.is_ascii(), "")
+        .as_str()
+        .to_owned();
+    let mut inside_comment = false;
+    // let _ = String::from_utf8(Vec::from(data.as_bytes())).expect("Found invalid UTF-8");
+
+    for (i, c) in data_cleaned.chars().enumerate() {
+        if data_cleaned[i..].starts_with("//") {
+            inside_comment = true;
+        } else if inside_comment {
+            if c == '\n' {
+                inside_comment = false;
+            }
+        } else if !inside_import && data_cleaned[i..].starts_with("import ") {
+            inside_import = true;
+            import_start_index = i;
+            braces_count = 0;
+        } else if inside_import {
+            if c == '{' {
+                braces_count += 1;
+            } else if c == '}' {
+                braces_count -= 1;
+            }
+
+            if braces_count == 0 && c == '\n' {
+                inside_import = false;
+                let import_str = &data[import_start_index..=i];
+                imports.push(import_str.trim().replace("\n", ""));
+            }
+        }
+    }
+
+    if inside_import {
+        let import_str = &data[import_start_index..];
+        imports.push(import_str.trim().replace("\n", ""));
+    }
+
+    imports
 }
 
 // basic import parser
