@@ -10,7 +10,7 @@ Generate from dot file:
 dot -Grankdir=LR -Tpng example1.dot -oout.png
 ```
 
-![Example](./out.png)
+![Example](./img/out.png)
 
 ## Time for generating graph for <https://github.com/nestjs/nest>
 

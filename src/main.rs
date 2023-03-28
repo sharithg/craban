@@ -56,7 +56,7 @@ fn generate_project_graph() {
     let mut graph: Graph<String, String> = Graph::new();
     let mut path_to_ts_file: HashMap<String, NodeIndex> = HashMap::new();
 
-    let dir = Path::new("./assets/nest");
+    let dir = Path::new("./assets/TypeScript-Node-Starter/src");
 
     if let Some(files) = visit_dirs(dir) {
         // println!("{:#?}", files);
