@@ -1,42 +1,131 @@
+use path_absolutize::*;
+use petgraph::dot::Config;
+use petgraph::dot::Dot;
+use petgraph::stable_graph::NodeIndex;
 use petgraph::Graph;
+use std::collections::HashMap;
 use std::collections::VecDeque;
+use std::fmt;
+use std::fs::canonicalize;
+use std::fs::File;
 use std::fs::{self};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum TsImportSource {
     PACKAGE,
     LOCAL,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct TsImport {
     import_source: TsImportSource,
     source: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct TsFile {
     imports: Vec<TsImport>,
     file_name: String,
     relative_path: String,
 }
 
+impl fmt::Display for TsFile {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "File name: {}", self.file_name)?;
+        writeln!(f, "Relative path: {}", self.relative_path)?;
+        writeln!(f, "Imports:")?;
+        for import in &self.imports {
+            write!(f, "    ")?;
+            match import.import_source {
+                TsImportSource::PACKAGE => write!(f, "from package ")?,
+                TsImportSource::LOCAL => write!(f, "from local file ")?,
+            }
+            writeln!(f, "{}", import.source)?;
+        }
+        Ok(())
+    }
+}
+
 fn main() {
-    let mut graph: Graph<TsFile, String> = Graph::new();
+    let mut graph: Graph<String, String> = Graph::new();
+    let mut path_to_ts_file: HashMap<String, NodeIndex> = HashMap::new();
 
-    // let n1 = graph.add_node(10);
-    // let n2 = graph.add_node(5);
-
-    // let _l2 = graph.add_edge(n1, n2, 4);
-
-    let dir = Path::new("./assets/proxysite-cloud-functions/functions/src");
+    let dir = Path::new("./assets/TypeScript-Node-Starter/src");
 
     if let Some(files) = visit_dirs(dir) {
-        println!("{:#?}", files);
+        // println!("{:#?}", files);
+        for file in files.clone() {
+            let path_clone = file
+                .relative_path
+                .clone()
+                .replace("/Users/sharithgodamanna/Desktop/Code/ts-analyzer/assets/TypeScript-Node-Starter/src", "");
+            let g_node = graph.add_node(path_clone.clone());
+
+            // println!("Idx: {}", g_node.index());
+            path_to_ts_file.insert(path_clone, g_node);
+        }
+
+        for file_2 in files.clone() {
+            // println!("{}", file_2.relative_path);
+            let base_file_rel_path = Path::new(file_2.relative_path.as_str());
+            for rel_path in file_2.imports {
+                // println!("-----{}", rel_path.source);
+
+                let import_path = Path::new(rel_path.source.as_str());
+                let rl_path = relative_path_from_dir_to_file(
+                    base_file_rel_path.parent().unwrap(),
+                    &import_path,
+                );
+
+                let source_node_key =
+                    get_base_project_path(dir, &Path::new(&file_2.relative_path.clone()));
+
+                if let Some(source_node) = path_to_ts_file.get(&source_node_key) {
+                    let path_key =
+                        get_base_project_path(dir, &Path::new(&rl_path.to_str().unwrap()));
+                    if let Some(found_node) = path_to_ts_file.get(path_key.as_str()) {
+                        graph.update_edge(
+                            *source_node,
+                            *found_node,
+                            String::from(rl_path.to_str().unwrap()),
+                        );
+                    }
+                }
+            }
+        }
     } else {
         eprintln!("ERROR visiting directories");
     }
+
+    let cfg = Dot::with_config(&graph, &[Config::EdgeNoLabel]);
+    println!("{:?}", cfg);
+    let mut f = File::create("example1.dot").unwrap();
+    let output = format!("{}", cfg);
+
+    if let Ok(_) = f.write(&output.as_bytes()) {
+        println!("{}", "Wrote output graph");
+    } else {
+        eprintln!("{}", "Error writing graph")
+    }
+}
+
+fn get_base_project_path(full_path: &Path, relative_path: &Path) -> String {
+    let abs_path = std::fs::canonicalize(full_path).unwrap();
+    let abs_path_str = abs_path.as_os_str().to_str().unwrap();
+
+    relative_path.to_str().unwrap().replace(abs_path_str, "")
+}
+
+fn relative_path_from_dir_to_file(original_path: &Path, relative_path: &Path) -> PathBuf {
+    let path = Path::new(original_path);
+    let parent = path;
+
+    let joined_path = parent.join(relative_path);
+    let p = Path::new(joined_path.as_path());
+
+    return PathBuf::from(p.absolutize().unwrap().to_str().unwrap());
 }
 
 // one possible implementation of walking a directory only visiting files
@@ -53,14 +142,17 @@ fn visit_dirs(dir: &Path) -> Option<Vec<TsFile>> {
 
             if file_type.is_file() {
                 // Do something with the file, e.g. print its path
-                println!("{}", path.display());
-                if let Some(ts_file) = find_imported_files(&entry.path()) {
-                    ts_files.push(ts_file);
-                } else {
-                    println!(
-                        "ERROR reading filepath: {}",
-                        path.as_os_str().to_str().unwrap()
-                    );
+                let ext = path.extension().unwrap().to_str().unwrap();
+
+                if ext == "ts" {
+                    if let Some(ts_file) = find_imported_files(&entry.path()) {
+                        ts_files.push(ts_file);
+                    } else {
+                        println!(
+                            "ERROR reading filepath: {}",
+                            path.as_os_str().to_str().unwrap()
+                        );
+                    }
                 }
             } else if file_type.is_dir() {
                 dir_queue.push_back(path);
@@ -93,7 +185,7 @@ fn find_imported_files(f_path: &PathBuf) -> Option<TsFile> {
     Some(TsFile {
         file_name: file_name.to_string(),
         imports,
-        relative_path: String::from(f_path.to_str().unwrap()),
+        relative_path: String::from(canonicalize(f_path).unwrap().to_str().unwrap()),
     })
 
     // let mut imports = Vec::new();
@@ -163,14 +255,41 @@ fn parse_import(line: String) -> Option<TsImport> {
 
     let source = tokenized_import[0].to_owned();
 
+    let mut source_str = source.replace("'", "");
+    let len = source_str.len();
+
+    if source_str.ends_with("..") {
+        // source_str.push_str("/index")
+        source_str.replace_range(len - 2..len, "index");
+        println!("Str: {}", source_str);
+    }
+
+    if source_str.ends_with(".") {
+        source_str.replace_range(len - 1..len, "index");
+        println!("Str: {}", source_str);
+    }
+
+    source_str.push_str(".ts");
+
     Some(TsImport {
         import_source: import_type,
-        source: source,
+        source: source_str,
     })
 }
 
 fn tokenize_import(import_str: &str) -> Vec<String> {
     let mut tokens: Vec<String> = Vec::new();
+
+    let parts = import_str.split(" ");
+    let parts_collection: Vec<&str> = parts.collect();
+    let parts_collection_str: Vec<String> = parts_collection
+        .iter()
+        .map(|&x| x.trim_end_matches(";").into())
+        .collect();
+
+    if parts_collection.len() == 2 {
+        return parts_collection_str;
+    }
 
     // Remove leading "import " keyword and trailing semicolon (if any)
     let import_str = import_str
@@ -205,7 +324,7 @@ fn tokenize_import(import_str: &str) -> Vec<String> {
             "from" => {
                 i += 1;
                 if i < parts.len() {
-                    let rep = parts[i].replace("'", "");
+                    let rep = parts[i].replace("'", "").replace('"', "");
                     tokens.push(rep.to_owned());
                     break;
                 }
