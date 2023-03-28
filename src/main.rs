@@ -49,6 +49,10 @@ impl fmt::Display for TsFile {
 }
 
 fn main() {
+    generate_project_graph();
+}
+
+fn generate_project_graph() {
     let mut graph: Graph<String, String> = Graph::new();
     let mut path_to_ts_file: HashMap<String, NodeIndex> = HashMap::new();
 
@@ -282,12 +286,18 @@ fn tokenize_import(import_str: &str) -> Vec<String> {
 
     let parts = import_str.split(" ");
     let parts_collection: Vec<&str> = parts.collect();
-    let parts_collection_str: Vec<String> = parts_collection
+    let mut parts_collection_str: Vec<String> = parts_collection
         .iter()
-        .map(|&x| x.trim_end_matches(";").into())
+        .map(|&x| {
+            x.trim_end_matches(";")
+                .replace("'", "")
+                .replace('"', "")
+                .into()
+        })
         .collect();
 
     if parts_collection.len() == 2 {
+        parts_collection_str.drain(0..1);
         return parts_collection_str;
     }
 
@@ -384,6 +394,13 @@ fn test_tokenize_import_with_leading_and_trailing_spaces() {
 #[test]
 fn test_tokenize_invalid_import_syntax() {
     let import_str = "import myFunc from 'mylib';";
+    let tokens = tokenize_import(import_str);
+    assert_eq!(tokens, vec!["mylib"]);
+}
+
+#[test]
+fn test_tokenize_whole_module() {
+    let import_str = "import 'mylib';";
     let tokens = tokenize_import(import_str);
     assert_eq!(tokens, vec!["mylib"]);
 }
