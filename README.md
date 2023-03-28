@@ -10,4 +10,4 @@ Generate from dot file:
 dot -Grankdir=LR -Tpng example1.dot -oout.png
 ```
 
-[Example](./out.png)
+![Example](./out.png)
