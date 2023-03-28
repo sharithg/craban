@@ -56,7 +56,7 @@ fn generate_project_graph() {
     let mut graph: Graph<String, String> = Graph::new();
     let mut path_to_ts_file: HashMap<String, NodeIndex> = HashMap::new();
 
-    let dir = Path::new("./assets/TypeScript-Node-Starter/src");
+    let dir = Path::new("./assets/nest");
 
     if let Some(files) = visit_dirs(dir) {
         // println!("{:#?}", files);
@@ -102,7 +102,6 @@ fn generate_project_graph() {
     }
 
     let cfg = Dot::with_config(&graph, &[Config::EdgeNoLabel]);
-    println!("{:?}", cfg);
     let mut f = File::create("example1.dot").unwrap();
     let output = format!("{}", cfg);
 
@@ -144,16 +143,16 @@ fn visit_dirs(dir: &Path) -> Option<Vec<TsFile>> {
 
             if file_type.is_file() {
                 // Do something with the file, e.g. print its path
-                let ext = path.extension().unwrap().to_str().unwrap();
-
-                if ext == "ts" {
-                    if let Some(ts_file) = find_imported_files(&entry.path()) {
-                        ts_files.push(ts_file);
-                    } else {
-                        println!(
-                            "ERROR reading filepath: {}",
-                            path.as_os_str().to_str().unwrap()
-                        );
+                if let Some(ext) = path.extension() {
+                    if ext == "ts" {
+                        if let Some(ts_file) = find_imported_files(&entry.path()) {
+                            ts_files.push(ts_file);
+                        } else {
+                            println!(
+                                "ERROR reading filepath: {}",
+                                path.as_os_str().to_str().unwrap()
+                            );
+                        }
                     }
                 }
             } else if file_type.is_dir() {

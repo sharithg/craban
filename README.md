@@ -11,3 +11,11 @@ dot -Grankdir=LR -Tpng example1.dot -oout.png
 ```
 
 ![Example](./out.png)
+
+## Time for generating graph for <https://github.com/nestjs/nest>
+
+```bash
+cargo run  0.56s user 0.28s system 83% cpu 1.010 total
+```
+
+Output: <https://www.figma.com/file/OAyJnZ5Pr0c6jnl5IxQmJd/Untitled?node-id=1%3A2&t=fBY2qmekHhwzRFq9-1>
