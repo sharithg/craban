@@ -61,10 +61,8 @@ fn generate_project_graph() {
     if let Some(files) = visit_dirs(dir) {
         // println!("{:#?}", files);
         for file in files.clone() {
-            let path_clone = file
-                .relative_path
-                .clone()
-                .replace("/Users/sharithgodamanna/Desktop/Code/ts-analyzer/assets/TypeScript-Node-Starter/src", "");
+            let path_clone = get_base_project_path(dir, &Path::new(&file.relative_path.clone()));
+
             let g_node = graph.add_node(path_clone.clone());
 
             // println!("Idx: {}", g_node.index());
