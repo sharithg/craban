@@ -1,7 +1,6 @@
 # Craban 🦀
 
-Analyzes ES6 project imports
-
+Build a dependancy graph of a ES6 project
 Example generated graph from: <https://github.com/microsoft/TypeScript-Node-Starter/tree/master/src>
 
 Generate from dot file:
@@ -23,8 +22,8 @@ Output as a [SVG](https://www.figma.com/file/OAyJnZ5Pr0c6jnl5IxQmJd/Untitled?nod
 ## Usage
 
 ```bash
-Usage: ts_analyze [-d <directory>]
-       ts_analyze [--help] [-h]
+Usage: craban [-d <directory>]
+       craban [--help] [-h]
 ```
 
 Limitations:

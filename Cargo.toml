@@ -1,5 +1,5 @@
 [package]
-name = "ts-analyzer"
+name = "craban"
 version = "0.1.0"
 edition = "2021"
 

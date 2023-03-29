@@ -1,9 +1,9 @@
 use std::env;
 
 fn usage() {
-    println!("Usage: ts_analyze [-d <directory>]");
-    println!("       ts_analyze [--help] [-h]");
-    println!("Try `ts_analyze --help' for more information.");
+    println!("Usage: craban [-d <directory>]");
+    println!("       craban [--help] [-h]");
+    println!("Try `craban --help' for more information.");
 }
 
 pub fn parse_args() -> Result<Option<String>, ()> {
