@@ -1,4 +1,4 @@
-# ES6 Project Analyzer
+# Craban
 
 Analyzes ES6 project imports
 
