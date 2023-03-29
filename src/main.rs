@@ -30,8 +30,7 @@ fn generate_project_graph(src_dir: &str) {
 
     let dir = Path::new(src_dir);
 
-    let files =
-        visit_dirs(dir).expect(format!("ERROR reading directory: {}", dir.display()).as_str());
+    let files = visit_dirs(dir).expect(&format!("ERROR reading directory: {}", dir.display()));
 
     // create a hashmap of the file path to a graph node
     for file in files.clone() {
@@ -57,9 +56,9 @@ fn generate_project_graph(src_dir: &str) {
             let import_base_path =
                 get_base_project_path(dir, &Path::new(&import_abs_path.to_str().unwrap()));
 
-            // get currently visiting import node
+            // get currently visiting file node
             if let Some(import_node) = path_to_ts_file.get(&visiting_file_node_key) {
-                // get imports
+                // get currently visiting files import node
                 if let Some(visiting_file_dependancy_node) =
                     path_to_ts_file.get(import_base_path.as_str())
                 {
@@ -123,19 +122,20 @@ fn visit_dirs(dir: &Path) -> Option<Vec<TsFile>> {
             let file_type = entry.file_type().unwrap();
             let path = entry.path();
 
-            // we only support ts files
             if file_type.is_file() {
-                if let Some(ext) = path.extension() {
-                    if ext == "ts" {
-                        if let Some(ts_file) = find_imported_files(&entry.path()) {
-                            ts_files.push(ts_file);
-                        } else {
-                            println!(
-                                "ERROR reading filepath: {}",
-                                path.as_os_str().to_str().unwrap()
-                            );
-                        }
-                    }
+                //
+                let ext = path.extension().expect(&format!(
+                    "ERROR reading directory: {}",
+                    path.as_os_str().to_str().unwrap()
+                ));
+
+                // we only support ts files
+                if ext == "ts" {
+                    let ts_file = find_imported_files(&entry.path()).expect(&format!(
+                        "ERROR reading filepath: {}",
+                        path.as_os_str().to_str().unwrap()
+                    ));
+                    ts_files.push(ts_file);
                 }
             } else if file_type.is_dir() {
                 dir_queue.push_back(path);
