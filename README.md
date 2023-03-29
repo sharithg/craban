@@ -26,3 +26,13 @@ Output as a [SVG](https://www.figma.com/file/OAyJnZ5Pr0c6jnl5IxQmJd/Untitled?nod
 Usage: ts_analyze [-d <directory>]
        ts_analyze [--help] [-h]
 ```
+
+Limitations:
+
+- Does not support absolute path imports
+
+```typescript
+import myFunc from "src/utils/file";
+```
+
+- Only supports ES6 module imports
