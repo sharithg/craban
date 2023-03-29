@@ -1,23 +1,20 @@
 # Craban 🦀
 
 Build a dependancy graph of a ES6 project
-Example generated graph from: <https://github.com/microsoft/TypeScript-Node-Starter/tree/master/src>
 
-Generate from dot file:
+## Examples
 
-```bash
-dot -Grankdir=LR -Tpng example1.dot -oout.png
-```
-
+<https://github.com/microsoft/TypeScript-Node-Starter/tree/master/src>
 ![Example](./img/out.png)
 
-## Time for generating graph for <https://github.com/nestjs/nest>
+<https://github.com/nestjs/nest> (1K+ files)
 
 ```bash
-cargo run  0.56s user 0.28s system 83% cpu 1.010 total
+# execution time
+0.56s user 0.28s system 83% cpu 1.010 total
 ```
 
-Output as a [SVG](https://www.figma.com/file/OAyJnZ5Pr0c6jnl5IxQmJd/Untitled?node-id=1%3A2&t=fBY2qmekHhwzRFq9-1)
+[SVG](https://www.figma.com/file/OAyJnZ5Pr0c6jnl5IxQmJd/Untitled?node-id=1%3A2&t=fBY2qmekHhwzRFq9-1)
 
 ## Usage
 
@@ -26,7 +23,14 @@ Usage: craban [-d <directory>]
        craban [--help] [-h]
 ```
 
-Limitations:
+```bash
+craban -d assets/TypeScript-Node-Starter/src
+
+# generate dot file
+dot -Grankdir=LR -Tpng example1.dot -oout.png
+```
+
+## Limitations:
 
 - Does not support absolute path imports
 
