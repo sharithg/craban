@@ -185,11 +185,33 @@ fn tokenize_import(import_str: &str) -> Vec<String> {
     tokens
 }
 
+// test get_import_lines
+#[test]
+fn test_get_import_lines() {
+    let res = get_import_lines(
+        "
+    import {
+        Component
+        } from '@angular2/core';
+    import defaultMember from 'module-name';
+    import   *    as name from 'module-name  ';
+    import   {  member }   from '  module-name';
+    // import my nice package
+    import { member as alias } from 'module-name';
+
+    const val = 'dummy';
+
+    const myFunc = function(){};
+    ",
+    );
+    assert_eq!(res.len(), 5);
+}
+
+// test tokenize_import
 #[test]
 fn test_tokenize_default_import() {
     let import_str = "import * as myModule from 'mylib';";
     let tokens = tokenize_import(import_str);
-    println!("{:#?}", tokens);
     assert_eq!(tokens, vec!["*", "mylib"]);
 }
 
