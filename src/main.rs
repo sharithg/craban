@@ -30,47 +30,47 @@ fn generate_project_graph(src_dir: &str) {
 
     let dir = Path::new(src_dir);
 
-    if let Some(files) = visit_dirs(dir) {
-        // println!("{:#?}", files);
-        for file in files.clone() {
-            let path_clone = get_base_project_path(dir, &Path::new(&file.relative_path.clone()));
+    let files =
+        visit_dirs(dir).expect(format!("ERROR reading directory: {}", dir.display()).as_str());
 
-            let g_node = graph.add_node(path_clone.clone());
+    // create a hashmap of the file path to a graph node
+    for file in files.clone() {
+        let path_clone = get_base_project_path(dir, &Path::new(&file.relative_path.clone()));
 
-            // println!("Idx: {}", g_node.index());
-            path_to_ts_file.insert(path_clone, g_node);
-        }
+        let g_node = graph.add_node(path_clone.clone());
 
-        for file_2 in files.clone() {
-            // println!("{}", file_2.relative_path);
-            let base_file_rel_path = Path::new(file_2.relative_path.as_str());
-            for rel_path in file_2.imports {
-                // println!("-----{}", rel_path.source);
+        path_to_ts_file.insert(path_clone, g_node);
+    }
 
-                let import_path = Path::new(rel_path.source.as_str());
-                let rl_path = relative_path_from_dir_to_file(
-                    base_file_rel_path.parent().unwrap(),
-                    &import_path,
-                );
+    for visiting_file in files.clone() {
+        let visting_file_relative_path = Path::new(visiting_file.relative_path.as_str());
+        let visiting_file_node_key =
+            get_base_project_path(dir, &Path::new(&visiting_file.relative_path.clone()));
 
-                let source_node_key =
-                    get_base_project_path(dir, &Path::new(&file_2.relative_path.clone()));
+        // for each file visit its dependancies (imports) and populate the graph
+        for import in visiting_file.imports {
+            let import_path = Path::new(import.source.as_str());
+            let import_abs_path = abs_path_from_dir_to_file(
+                visting_file_relative_path.parent().unwrap(),
+                &import_path,
+            );
+            let import_base_path =
+                get_base_project_path(dir, &Path::new(&import_abs_path.to_str().unwrap()));
 
-                if let Some(source_node) = path_to_ts_file.get(&source_node_key) {
-                    let path_key =
-                        get_base_project_path(dir, &Path::new(&rl_path.to_str().unwrap()));
-                    if let Some(found_node) = path_to_ts_file.get(path_key.as_str()) {
-                        graph.update_edge(
-                            *source_node,
-                            *found_node,
-                            String::from(rl_path.to_str().unwrap()),
-                        );
-                    }
+            // get currently visiting import node
+            if let Some(import_node) = path_to_ts_file.get(&visiting_file_node_key) {
+                // get imports
+                if let Some(visiting_file_dependancy_node) =
+                    path_to_ts_file.get(import_base_path.as_str())
+                {
+                    graph.update_edge(
+                        *import_node,
+                        *visiting_file_dependancy_node,
+                        String::from(import_abs_path.to_str().unwrap()),
+                    );
                 }
             }
         }
-    } else {
-        eprintln!("ERROR visiting directories");
     }
 
     let cfg = Dot::with_config(&graph, &[Config::EdgeNoLabel]);
@@ -102,7 +102,7 @@ fn get_base_project_path(full_path: &Path, relative_path: &Path) -> String {
  *
  * Since the file util was imported relatively from /Users/linus/src/utils
  */
-fn relative_path_from_dir_to_file(original_path: &Path, relative_path: &Path) -> PathBuf {
+fn abs_path_from_dir_to_file(original_path: &Path, relative_path: &Path) -> PathBuf {
     let path = Path::new(original_path);
     let parent = path;
 
