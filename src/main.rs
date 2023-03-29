@@ -91,6 +91,17 @@ fn get_base_project_path(full_path: &Path, relative_path: &Path) -> String {
     relative_path.to_str().unwrap().replace(abs_path_str, "")
 }
 
+/**
+ * Takes in two paths original_path and relative_path and returns the absolute path of
+ * relative_path.
+ * Ex:
+ * original_path: /Users/linus/src/utils/test
+ * relative_path: ../util
+ *
+ * Returns: /Users/linus/src/utils
+ *
+ * Since the file util was imported relatively from /Users/linus/src/utils
+ */
 fn relative_path_from_dir_to_file(original_path: &Path, relative_path: &Path) -> PathBuf {
     let path = Path::new(original_path);
     let parent = path;
@@ -101,7 +112,6 @@ fn relative_path_from_dir_to_file(original_path: &Path, relative_path: &Path) ->
     return PathBuf::from(p.absolutize().unwrap().to_str().unwrap());
 }
 
-// one possible implementation of walking a directory only visiting files
 fn visit_dirs(dir: &Path) -> Option<Vec<TsFile>> {
     let mut dir_queue = VecDeque::new();
     dir_queue.push_back(dir.to_path_buf());
@@ -113,8 +123,8 @@ fn visit_dirs(dir: &Path) -> Option<Vec<TsFile>> {
             let file_type = entry.file_type().unwrap();
             let path = entry.path();
 
+            // we only support ts files
             if file_type.is_file() {
-                // Do something with the file, e.g. print its path
                 if let Some(ext) = path.extension() {
                     if ext == "ts" {
                         if let Some(ts_file) = find_imported_files(&entry.path()) {
