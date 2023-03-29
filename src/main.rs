@@ -30,31 +30,31 @@ fn generate_project_graph(src_dir: &str) {
 
     let dir = Path::new(src_dir);
 
-    let files = visit_dirs(dir).expect(&format!("ERROR reading directory: {}", dir.display()));
+    let files = visit_dirs(dir).unwrap_or_else(|| panic!("ERROR reading directory: {}", dir.display()));
 
     // create a hashmap of the file path to a graph node
     for file in files.clone() {
-        let path_clone = get_base_project_path(dir, &Path::new(&file.relative_path.clone()));
+        let path_clone = get_base_project_path(dir, Path::new(&file.relative_path.clone()));
 
         let g_node = graph.add_node(path_clone.clone());
 
         path_to_ts_file.insert(path_clone, g_node);
     }
 
-    for visiting_file in files.clone() {
+    for visiting_file in files {
         let visting_file_relative_path = Path::new(visiting_file.relative_path.as_str());
         let visiting_file_node_key =
-            get_base_project_path(dir, &Path::new(&visiting_file.relative_path.clone()));
+            get_base_project_path(dir, Path::new(&visiting_file.relative_path.clone()));
 
         // for each file visit its dependancies (imports) and populate the graph
         for import in visiting_file.imports {
             let import_path = Path::new(import.source.as_str());
             let import_abs_path = abs_path_from_dir_to_file(
                 visting_file_relative_path.parent().unwrap(),
-                &import_path,
+                import_path,
             );
             let import_base_path =
-                get_base_project_path(dir, &Path::new(&import_abs_path.to_str().unwrap()));
+                get_base_project_path(dir, Path::new(&import_abs_path.to_str().unwrap()));
 
             // get currently visiting file node
             if let Some(import_node) = path_to_ts_file.get(&visiting_file_node_key) {
@@ -76,10 +76,10 @@ fn generate_project_graph(src_dir: &str) {
     let mut f = File::create("example1.dot").unwrap();
     let output = format!("{}", cfg);
 
-    if let Ok(_) = f.write(&output.as_bytes()) {
-        println!("{}", "Wrote output graph");
+    if let Ok(_) = f.write(output.as_bytes()) {
+        println!("Wrote output graph");
     } else {
-        eprintln!("{}", "Error writing graph")
+        eprintln!("Error writing graph")
     }
 }
 
@@ -124,17 +124,13 @@ fn visit_dirs(dir: &Path) -> Option<Vec<TsFile>> {
 
             if file_type.is_file() {
                 //
-                let ext = path.extension().expect(&format!(
-                    "ERROR reading directory: {}",
-                    path.as_os_str().to_str().unwrap()
-                ));
+                let ext = path.extension().unwrap_or_else(|| panic!("ERROR reading directory: {}",
+                    path.as_os_str().to_str().unwrap()));
 
                 // we only support ts files
                 if ext == "ts" {
-                    let ts_file = find_imported_files(&entry.path()).expect(&format!(
-                        "ERROR reading filepath: {}",
-                        path.as_os_str().to_str().unwrap()
-                    ));
+                    let ts_file = find_imported_files(&entry.path()).unwrap_or_else(|| panic!("ERROR reading filepath: {}",
+                        path.as_os_str().to_str().unwrap()));
                     ts_files.push(ts_file);
                 }
             } else if file_type.is_dir() {

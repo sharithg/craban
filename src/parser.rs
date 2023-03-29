@@ -66,14 +66,14 @@ fn get_import_lines(data: &str) -> Vec<String> {
             if braces_count == 0 && c == '\n' {
                 inside_import = false;
                 let import_str = &data[import_start_index..=i];
-                imports.push(import_str.trim().replace("\n", ""));
+                imports.push(import_str.trim().replace('\n', ""));
             }
         }
     }
 
     if inside_import {
         let import_str = &data[import_start_index..];
-        imports.push(import_str.trim().replace("\n", ""));
+        imports.push(import_str.trim().replace('\n', ""));
     }
 
     imports
@@ -85,18 +85,18 @@ fn parse_import(line: String) -> Option<TsImport> {
     tokenized_import.reverse();
     let mut import_type = TsImportSource::PACKAGE;
 
-    if tokenized_import.len() == 0 {
+    if tokenized_import.is_empty() {
         println!("ERROR: tokenized length 0 for: {}", line.as_str());
         return None;
     }
 
-    if tokenized_import[0].starts_with(".") {
+    if tokenized_import[0].starts_with('.') {
         import_type = TsImportSource::LOCAL
     }
 
     let source = tokenized_import[0].to_owned();
 
-    let mut source_str = source.replace("'", "");
+    let mut source_str = source.replace('\'', "");
     let len = source_str.len();
 
     if source_str.ends_with("..") {
@@ -105,7 +105,7 @@ fn parse_import(line: String) -> Option<TsImport> {
         println!("Str: {}", source_str);
     }
 
-    if source_str.ends_with(".") {
+    if source_str.ends_with('.') {
         source_str.replace_range(len - 1..len, "index");
         println!("Str: {}", source_str);
     }
@@ -121,15 +121,13 @@ fn parse_import(line: String) -> Option<TsImport> {
 fn tokenize_import(import_str: &str) -> Vec<String> {
     let mut tokens: Vec<String> = Vec::new();
 
-    let parts = import_str.split(" ");
+    let parts = import_str.split(' ');
     let parts_collection: Vec<&str> = parts.collect();
     let mut parts_collection_str: Vec<String> = parts_collection
         .iter()
         .map(|&x| {
-            x.trim_end_matches(";")
-                .replace("'", "")
-                .replace('"', "")
-                .into()
+            x.trim_end_matches(';')
+                .replace(['\'', '"'], "")
         })
         .collect();
 
@@ -142,7 +140,7 @@ fn tokenize_import(import_str: &str) -> Vec<String> {
     let import_str = import_str
         .trim_end()
         .trim_start_matches("import ")
-        .trim_end_matches(";");
+        .trim_end_matches(';');
 
     // Split import string by whitespace
     let parts: Vec<&str> = import_str.split_whitespace().collect();
@@ -160,7 +158,7 @@ fn tokenize_import(import_str: &str) -> Vec<String> {
             "{" => {
                 i += 1;
                 while i < parts.len() && parts[i] != "}" {
-                    let rep = parts[i].replace(",", "");
+                    let rep = parts[i].replace(',', "");
                     tokens.push(rep.to_owned());
 
                     i += 1;
@@ -171,8 +169,8 @@ fn tokenize_import(import_str: &str) -> Vec<String> {
             "from" => {
                 i += 1;
                 if i < parts.len() {
-                    let rep = parts[i].replace("'", "").replace('"', "");
-                    tokens.push(rep.to_owned());
+                    let rep = parts[i].replace(['\'', '"'], "");
+                    tokens.push(rep);
                     break;
                 }
             }
