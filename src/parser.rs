@@ -125,10 +125,7 @@ fn tokenize_import(import_str: &str) -> Vec<String> {
     let parts_collection: Vec<&str> = parts.collect();
     let mut parts_collection_str: Vec<String> = parts_collection
         .iter()
-        .map(|&x| {
-            x.trim_end_matches(';')
-                .replace(['\'', '"'], "")
-        })
+        .map(|&x| x.trim_end_matches(';').replace(['\'', '"'], ""))
         .collect();
 
     if parts_collection.len() == 2 {

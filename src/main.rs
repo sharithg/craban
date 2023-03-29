@@ -30,7 +30,8 @@ fn generate_project_graph(src_dir: &str) {
 
     let dir = Path::new(src_dir);
 
-    let files = visit_dirs(dir).unwrap_or_else(|| panic!("ERROR reading directory: {}", dir.display()));
+    let files =
+        visit_dirs(dir).unwrap_or_else(|| panic!("ERROR reading directory: {}", dir.display()));
 
     // create a hashmap of the file path to a graph node
     for file in files.clone() {
@@ -124,13 +125,21 @@ fn visit_dirs(dir: &Path) -> Option<Vec<TsFile>> {
 
             if file_type.is_file() {
                 //
-                let ext = path.extension().unwrap_or_else(|| panic!("ERROR reading directory: {}",
-                    path.as_os_str().to_str().unwrap()));
+                let ext = path.extension().unwrap_or_else(|| {
+                    panic!(
+                        "ERROR reading directory: {}",
+                        path.as_os_str().to_str().unwrap()
+                    )
+                });
 
                 // we only support ts files
                 if ext == "ts" {
-                    let ts_file = find_imported_files(&entry.path()).unwrap_or_else(|| panic!("ERROR reading filepath: {}",
-                        path.as_os_str().to_str().unwrap()));
+                    let ts_file = find_imported_files(&entry.path()).unwrap_or_else(|| {
+                        panic!(
+                            "ERROR reading filepath: {}",
+                            path.as_os_str().to_str().unwrap()
+                        )
+                    });
                     ts_files.push(ts_file);
                 }
             } else if file_type.is_dir() {
