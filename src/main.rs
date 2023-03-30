@@ -17,10 +17,8 @@ use parser::find_imported_files;
 use structs::TsFile;
 
 fn main() {
-    if let Ok(cli_output) = parse_args() {
-        if let Some(source_code_dir) = cli_output {
-            generate_project_graph(source_code_dir.as_str());
-        }
+    if let Ok(Some(source_code_dir)) = parse_args() {
+        generate_project_graph(source_code_dir.as_str());
     }
 }
 
@@ -77,7 +75,7 @@ fn generate_project_graph(src_dir: &str) {
     let mut f = File::create("example1.dot").unwrap();
     let output = format!("{}", cfg);
 
-    if let Ok(_) = f.write(output.as_bytes()) {
+    if f.write(output.as_bytes()).is_ok() {
         println!("Wrote output graph");
     } else {
         eprintln!("Error writing graph")

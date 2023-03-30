@@ -2,8 +2,8 @@ use std::fmt;
 
 #[derive(Debug, Clone)]
 pub enum TsImportSource {
-    PACKAGE,
-    LOCAL,
+    Package,
+    Local,
 }
 
 #[derive(Debug, Clone)]
@@ -27,8 +27,8 @@ impl fmt::Display for TsFile {
         for import in &self.imports {
             write!(f, "    ")?;
             match import.import_source {
-                TsImportSource::PACKAGE => write!(f, "from package ")?,
-                TsImportSource::LOCAL => write!(f, "from local file ")?,
+                TsImportSource::Package => write!(f, "from package ")?,
+                TsImportSource::Local => write!(f, "from local file ")?,
             }
             writeln!(f, "{}", import.source)?;
         }

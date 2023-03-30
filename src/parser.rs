@@ -83,7 +83,7 @@ fn get_import_lines(data: &str) -> Vec<String> {
 fn parse_import(line: String) -> Option<TsImport> {
     let mut tokenized_import = tokenize_import(line.as_str());
     tokenized_import.reverse();
-    let mut import_type = TsImportSource::PACKAGE;
+    let mut import_type = TsImportSource::Package;
 
     if tokenized_import.is_empty() {
         println!("ERROR: tokenized length 0 for: {}", line.as_str());
@@ -91,7 +91,7 @@ fn parse_import(line: String) -> Option<TsImport> {
     }
 
     if tokenized_import[0].starts_with('.') {
-        import_type = TsImportSource::LOCAL
+        import_type = TsImportSource::Local
     }
 
     let source = tokenized_import[0].to_owned();
