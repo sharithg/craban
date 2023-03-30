@@ -34,21 +34,21 @@ fn generate_project_graph(src_dir: &str) {
         visit_dirs(dir).unwrap_or_else(|| panic!("ERROR reading directory: {}", dir.display()));
 
     // create a hashmap of the file path to a graph node
-    for file in files.clone() {
-        let path_clone = get_base_project_path(dir, Path::new(&file.relative_path.clone()));
+    for file in &files {
+        let path_clone = get_base_project_path(dir, Path::new(&file.relative_path));
 
         let g_node = graph.add_node(path_clone.clone());
 
         path_to_ts_file.insert(path_clone, g_node);
     }
 
-    for visiting_file in files {
+    for visiting_file in &files {
         let visting_file_relative_path = Path::new(visiting_file.relative_path.as_str());
         let visiting_file_node_key =
             get_base_project_path(dir, Path::new(&visiting_file.relative_path.clone()));
 
         // for each file visit its dependancies (imports) and populate the graph
-        for import in visiting_file.imports {
+        for import in &visiting_file.imports {
             let import_path = Path::new(import.source.as_str());
             let import_abs_path = abs_path_from_dir_to_file(
                 visting_file_relative_path.parent().unwrap(),
